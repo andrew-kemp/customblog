@@ -1,25 +1,72 @@
 #!/bin/bash
 
-echo "=== CustomBlog Installer ==="
+set -e
 
-# Prompt for site name
-read -p "Enter site name: " SITENAME
-DBNAME="db_$(echo $SITENAME | tr '[:upper:]' '[:lower:]' | tr ' ' '_')"
-DBUSER="user_$(echo $SITENAME | tr '[:upper:]' '[:lower:]' | tr ' ' '_')"
+echo "=== CustomBlog Automated Installer ==="
+
+# --- User Prompts with Validation ---
+while [[ -z "$DOMAIN" ]]; do
+  read -p "Enter your domain name (e.g., www.andykemp.cloud): " DOMAIN
+done
+while [[ -z "$SITENAME" ]]; do
+  read -p "Enter your site name (for display, e.g., Andy Kemp): " SITENAME
+done
+while [[ -z "$SSLEMAIL" ]]; do
+  read -p "Enter your email address for SSL notifications: " SSLEMAIL
+done
+
+INSTALL_DIR="/var/www/$DOMAIN"
+PUBLIC_DIR="$INSTALL_DIR/public"
+
+# Generate DB and user names based on the domain (replace . and - with _)
+DOMAIN_DB=$(echo "$DOMAIN" | tr '.' '_' | tr '-' '_')
+DBNAME="dm_${DOMAIN_DB}"
+DBUSER="dm_${DOMAIN_DB}"
 DBPASS=$(openssl rand -base64 16)
 
-# Update & install required packages
-sudo apt update
-sudo apt install -y apache2 mysql-server php libapache2-mod-php php-mysql php-xml php-mbstring php-curl php-zip php-gd git curl unzip certbot python3-certbot-apache postfix mailutils
+# Mail domain for Postfix (strip subdomain)
+MAILDOMAIN="${DOMAIN#*.}"
 
-# Create MySQL DB and user
-sudo mysql -e "CREATE DATABASE IF NOT EXISTS \`$DBNAME\`;"
-sudo mysql -e "CREATE USER IF NOT EXISTS '$DBUSER'@'localhost' IDENTIFIED BY '$DBPASS';"
+# --- Remove existing install if present ---
+if [ -d "$INSTALL_DIR" ]; then
+  echo "--- Removing existing site files at $INSTALL_DIR ---"
+  sudo rm -rf "$INSTALL_DIR"
+fi
+
+# Drop existing DB and user if they exist
+echo "--- Dropping old DB and user if they exist ---"
+sudo mysql -e "DROP DATABASE IF EXISTS \`$DBNAME\`;"
+sudo mysql -e "DROP USER IF EXISTS '$DBUSER'@'localhost';"
+sudo mysql -e "FLUSH PRIVILEGES;"
+
+# --- Preseed Postfix install ---
+echo "--- Configuring Postfix ---"
+echo "postfix postfix/main_mailer_type string 'Internet Site'" | sudo debconf-set-selections
+echo "postfix postfix/mailname string $MAILDOMAIN" | sudo debconf-set-selections
+
+# --- Install dependencies ---
+echo "--- Installing dependencies ---"
+sudo apt update
+sudo DEBIAN_FRONTEND=noninteractive apt install -y apache2 mysql-server php libapache2-mod-php php-mysql php-xml php-mbstring php-curl php-zip php-gd git curl unzip certbot python3-certbot-apache postfix mailutils
+
+# --- Enable required Apache modules ---
+sudo a2enmod ssl
+sudo a2enmod rewrite
+
+# --- Clone repo into web root ---
+echo "--- Cloning repo ---"
+sudo git clone https://github.com/andrew-kemp/customblog.git "$INSTALL_DIR"
+sudo chown -R www-data:www-data "$INSTALL_DIR"
+
+# --- Create MySQL database and user ---
+echo "--- Creating DB and DB user ---"
+sudo mysql -e "CREATE DATABASE \`$DBNAME\`;"
+sudo mysql -e "CREATE USER '$DBUSER'@'localhost' IDENTIFIED BY '$DBPASS';"
 sudo mysql -e "GRANT ALL PRIVILEGES ON \`$DBNAME\`.* TO '$DBUSER'@'localhost';"
 sudo mysql -e "FLUSH PRIVILEGES;"
 
-# Save DB config
-cat > dbconfig.php <<EOF
+# --- Write DB config ---
+cat > "$INSTALL_DIR/dbconfig.php" <<EOF
 <?php
 define('DB_NAME', '$DBNAME');
 define('DB_USER', '$DBUSER');
@@ -27,39 +74,120 @@ define('DB_PASS', '$DBPASS');
 define('DB_HOST', 'localhost');
 EOF
 
-# Set up directory structure
-mkdir -p public/assets inc
+cp "$INSTALL_DIR/dbconfig.php" "$INSTALL_DIR/inc/dbconfig.php"
 
-# Copy dbconfig.php into inc/
-cp dbconfig.php inc/dbconfig.php
-
-# Prompt for admin username/email/password
-echo "Let's set up your admin user."
-read -p "Admin username: " ADMINUSER
-read -p "Admin email: " ADMINEMAIL
-read -sp "Admin password: " ADMINPASS
-echo
-
-# Set up the database schema (simple users, posts, categories, tags, pages)
-mysql -u$DBUSER -p$DBPASS $DBNAME < schema.sql
-
-# Insert admin user with create_admin.php
-php inc/create_admin.php "$ADMINUSER" "$ADMINEMAIL" "$ADMINPASS"
-
-# Banner upload
-read -p "Upload a banner image? (y/N): " UPBANNER
-if [[ "$UPBANNER" =~ ^[Yy]$ ]]; then
-    read -p "Path to image: " BANNERPATH
-    cp "$BANNERPATH" public/assets/banner.jpg
-else
-    cp public/assets/banner-default.jpg public/assets/banner.jpg
+# --- Set Default Banner if None Exists ---
+if [ ! -f "$PUBLIC_DIR/assets/banner.jpg" ]; then
+  cp "$PUBLIC_DIR/assets/banner-default.jpg" "$PUBLIC_DIR/assets/banner.jpg"
 fi
 
-# SSL setup
-read -p "Enter your domain (for Let's Encrypt SSL, e.g. blog.example.com): " DOMAIN
-sudo certbot --apache -d "$DOMAIN"
+# --- Create minimal HTTP VirtualHost (no SSL yet) ---
+echo "--- Setting up Apache HTTP VirtualHost ---"
+VHOST_CONF="/etc/apache2/sites-available/$DOMAIN.conf"
+sudo bash -c "cat > $VHOST_CONF" <<EOF
+<VirtualHost *:80>
+    ServerName $DOMAIN
+    DocumentRoot $PUBLIC_DIR
+
+    <Directory $PUBLIC_DIR>
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog \${APACHE_LOG_DIR}/$DOMAIN-error.log
+    CustomLog \${APACHE_LOG_DIR}/$DOMAIN-access.log combined
+</VirtualHost>
+EOF
+
+sudo a2ensite "$DOMAIN.conf"
+sudo a2dissite 000-default.conf || true
+
+echo "--- Starting Apache for HTTP config ---"
+sudo systemctl start apache2 || sudo systemctl restart apache2
+
+# --- Obtain SSL Certificate with Certbot ---
+echo "--- Obtaining Let's Encrypt certificate ---"
+sudo certbot --apache -d "$DOMAIN" --non-interactive --agree-tos -m "$SSLEMAIL"
+
+# --- Force certificate renewal check and permissions ---
+sudo chown -R www-data:www-data /etc/letsencrypt
+
+# --- Update Apache VirtualHost for SSL ---
+echo "--- Updating Apache VirtualHost with SSL ---"
+sudo bash -c "cat > $VHOST_CONF" <<EOF
+<VirtualHost *:80>
+    ServerName $DOMAIN
+    Redirect permanent / https://$DOMAIN/
+</VirtualHost>
+
+<VirtualHost *:443>
+    ServerName $DOMAIN
+    DocumentRoot $PUBLIC_DIR
+
+    <Directory $PUBLIC_DIR>
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog \${APACHE_LOG_DIR}/$DOMAIN-error.log
+    CustomLog \${APACHE_LOG_DIR}/$DOMAIN-access.log combined
+
+    SSLEngine on
+    SSLCertificateFile /etc/letsencrypt/live/$DOMAIN/fullchain.pem
+    SSLCertificateKeyFile /etc/letsencrypt/live/$DOMAIN/privkey.pem
+</VirtualHost>
+EOF
+
 sudo systemctl reload apache2
 
-echo "0 3 * * * certbot renew --quiet" | sudo tee -a /etc/crontab
+# --- Certbot auto-renewal ---
+if ! crontab -l 2>/dev/null | grep -q 'certbot renew'; then
+  (crontab -l 2>/dev/null; echo "0 3 * * * certbot renew --quiet") | crontab -
+fi
 
-echo "Installation complete! Visit your site to finish MFA setup."
+# --- Import DB schema ---
+echo "--- Importing database schema ---"
+mysql -u"$DBUSER" -p"$DBPASS" "$DBNAME" < "$INSTALL_DIR/schema.sql"
+
+# --- Admin user setup ---
+ADMINUSER="admin"
+ADMINEMAIL="admin@$MAILDOMAIN"
+ADMINPASS=$(openssl rand -base64 12)
+php "$INSTALL_DIR/inc/create_admin.php" "$ADMINUSER" "$ADMINEMAIL" "$ADMINPASS"
+
+# --- Permissions ---
+sudo chown -R www-data:www-data "$INSTALL_DIR"
+
+# --- Review of all key settings ---
+echo ""
+echo "===== INSTALLATION COMPLETE ====="
+echo "  SITE SETTINGS"
+echo "  -------------"
+echo "  Site URL:           https://$DOMAIN/"
+echo "  Site Name:          $SITENAME"
+echo "  Site Root:          $INSTALL_DIR"
+echo "  Web Root:           $PUBLIC_DIR"
+echo ""
+echo "  DATABASE SETTINGS"
+echo "  -----------------"
+echo "  DB Name:           $DBNAME"
+echo "  DB User:           $DBUSER"
+echo "  DB Password:       $DBPASS"
+echo ""
+echo "  ADMIN SETTINGS"
+echo "  --------------"
+echo "  Admin User:        $ADMINUSER"
+echo "  Admin Email:       $ADMINEMAIL"
+echo "  Admin Password:    $ADMINPASS"
+echo ""
+echo "  MAIL SETTINGS"
+echo "  -------------"
+echo "  Postfix Mailname:  $MAILDOMAIN"
+echo ""
+echo "  SSL SETTINGS"
+echo "  ------------"
+echo "  Certificate Path:  /etc/letsencrypt/live/$DOMAIN/"
+echo "  SSL Email:         $SSLEMAIL"
+echo ""
+echo "For security, change your admin password and set up MFA on first login."
+echo "================================="
