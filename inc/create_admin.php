@@ -1,17 +1,29 @@
 <?php
-if ($argc < 6) exit("Usage: php create_admin.php user email pass dbname dbuser dbpass\n");
-$user = $argv[1];
-$email = $argv[2];
-$pass = password_hash($argv[3], PASSWORD_BCRYPT);
-$dbname = $argv[4];
-$dbuser = $argv[5];
-$dbpass = $argv[6];
+// Usage: php create_admin.php username email password
+if ($argc != 4) {
+    exit("Usage: php create_admin.php username email password\n");
+}
+require_once 'dbconfig.php';
+$mysqli = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+if ($mysqli->connect_errno) {
+    exit("Failed to connect: " . $mysqli->connect_error . "\n");
+}
+$username = $mysqli->real_escape_string($argv[1]);
+$email = $mysqli->real_escape_string($argv[2]);
+$password = password_hash($argv[3], PASSWORD_DEFAULT);
+// Create user
+$mysqli->query("INSERT INTO users (username, email, password) VALUES ('$username', '$email', '$password')");
+if ($mysqli->error) exit("User creation failed: " . $mysqli->error . "\n");
 
-$db = new mysqli('localhost', $dbuser, $dbpass, $dbname);
-if ($db->connect_error) exit("DB error: " . $db->connect_error);
-
-$stmt = $db->prepare("INSERT INTO users (username, email, password_hash, is_admin) VALUES (?, ?, ?, 1)");
-$stmt->bind_param('sss', $user, $email, $pass);
+// Optionally create sample post for this admin user
+$admin_id = $mysqli->insert_id;
+$title = 'Welcome!';
+$content = 'This is your first post!';
+$stmt = $mysqli->prepare("INSERT INTO posts (title, content, author_id) VALUES (?, ?, ?)");
+$stmt->bind_param("ssi", $title, $content, $admin_id);
 $stmt->execute();
 $stmt->close();
-$db->close();
+
+echo "Admin user and welcome post created\n";
+$mysqli->close();
+?>
