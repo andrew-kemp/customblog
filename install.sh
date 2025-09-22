@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "=== Custom CMS Installer ==="
+echo "=== CustomBlog Installer ==="
 
 # Prompt for site name
 read -p "Enter site name: " SITENAME
@@ -8,11 +8,11 @@ DBNAME="db_$(echo $SITENAME | tr '[:upper:]' '[:lower:]' | tr ' ' '_')"
 DBUSER="user_$(echo $SITENAME | tr '[:upper:]' '[:lower:]' | tr ' ' '_')"
 DBPASS=$(openssl rand -base64 16)
 
-# Update & install LAMP, certbot, postfix, mailutils
+# Update & install required packages
 sudo apt update
 sudo apt install -y apache2 mysql-server php libapache2-mod-php php-mysql php-xml php-mbstring php-curl php-zip php-gd git curl unzip certbot python3-certbot-apache postfix mailutils
 
-# Secure MySQL & create DB/user
+# Create MySQL DB and user
 sudo mysql -e "CREATE DATABASE IF NOT EXISTS \`$DBNAME\`;"
 sudo mysql -e "CREATE USER IF NOT EXISTS '$DBUSER'@'localhost' IDENTIFIED BY '$DBPASS';"
 sudo mysql -e "GRANT ALL PRIVILEGES ON \`$DBNAME\`.* TO '$DBUSER'@'localhost';"
@@ -27,12 +27,11 @@ define('DB_PASS', '$DBPASS');
 define('DB_HOST', 'localhost');
 EOF
 
-# Clone repo (replace URL with your actual repo)
-git clone https://github.com/andrew-kemp/your-cms-repo.git /var/www/html/your-cms
-cp dbconfig.php /var/www/html/your-cms/dbconfig.php
+# Set up directory structure
+mkdir -p public/assets inc
 
-# Set permissions
-sudo chown -R www-data:www-data /var/www/html/your-cms
+# Copy dbconfig.php into inc/
+cp dbconfig.php inc/dbconfig.php
 
 # Prompt for admin username/email/password
 echo "Let's set up your admin user."
@@ -41,20 +40,23 @@ read -p "Admin email: " ADMINEMAIL
 read -sp "Admin password: " ADMINPASS
 echo
 
-# Insert admin user into DB (uses PHP script)
-php /var/www/html/your-cms/inc/create_admin.php "$ADMINUSER" "$ADMINEMAIL" "$ADMINPASS" "$DBNAME" "$DBUSER" "$DBPASS"
+# Set up the database schema (simple users, posts, categories, tags, pages)
+mysql -u$DBUSER -p$DBPASS $DBNAME < schema.sql
+
+# Insert admin user with create_admin.php
+php inc/create_admin.php "$ADMINUSER" "$ADMINEMAIL" "$ADMINPASS"
 
 # Banner upload
 read -p "Upload a banner image? (y/N): " UPBANNER
 if [[ "$UPBANNER" =~ ^[Yy]$ ]]; then
     read -p "Path to image: " BANNERPATH
-    cp "$BANNERPATH" /var/www/html/your-cms/public/assets/banner.jpg
+    cp "$BANNERPATH" public/assets/banner.jpg
 else
-    cp /var/www/html/your-cms/public/assets/banner-default.jpg /var/www/html/your-cms/public/assets/banner.jpg
+    cp public/assets/banner-default.jpg public/assets/banner.jpg
 fi
 
 # SSL setup
-read -p "Enter your domain (for Let's Encrypt SSL): " DOMAIN
+read -p "Enter your domain (for Let's Encrypt SSL, e.g. blog.example.com): " DOMAIN
 sudo certbot --apache -d "$DOMAIN"
 sudo systemctl reload apache2
 
