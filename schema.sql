@@ -52,10 +52,6 @@ CREATE TABLE IF NOT EXISTS pages (
     content TEXT
 );
 
--- Insert default "Hello World" blog post
-INSERT INTO posts (title, slug, content, author_id) VALUES
-('Hello World!', 'hello-world', 'Welcome to your first blog post. Edit or delete this post in the admin panel.', 1);
-
 -- Insert default pages
 INSERT INTO pages (title, slug, content) VALUES
 ('About', 'about', 'This is the about page. Edit it for your story.'),
