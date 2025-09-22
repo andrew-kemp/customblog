@@ -1,0 +1,21 @@
+# System packages (installed by install.sh)
+apache2
+mysql-server
+php
+libapache2-mod-php
+php-mysql
+php-xml
+php-mbstring
+php-curl
+php-zip
+php-gd
+git
+curl
+unzip
+certbot
+python3-certbot-apache
+postfix
+mailutils
+
+# PHP Libraries (install via Composer if needed)
+# - e.g., robthree/twofactorauth for TOTP MFA
