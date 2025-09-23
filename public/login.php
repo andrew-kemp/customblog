@@ -1,41 +1,42 @@
 <?php
 session_start();
-require_once '../inc/dbconfig.php';
 
+$pageTitle = "Login";
+$currentPage = '';
 $error = '';
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $mysqli = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
-    $username = $mysqli->real_escape_string($_POST['username'] ?? '');
-    $password = $_POST['password'] ?? '';
 
-    $result = $mysqli->query("SELECT * FROM users WHERE username = '$username' LIMIT 1");
-    if ($user = $result->fetch_assoc()) {
-        if (password_verify($password, $user['password_hash'])) {
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['is_admin'] = $user['is_admin'];
-            header('Location: /admin/');
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $username = trim($_POST['username'] ?? '');
+    $password = $_POST['password'] ?? '';
+    if ($username === '' || $password === '') {
+        $error = 'Please enter both username and password.';
+    } else {
+        // Replace with your real authentication logic
+        if ($username === 'admin' && $password === 'password') {
+            $_SESSION['user'] = $username;
+            header('Location: /admin.php');
             exit;
+        } else {
+            $error = 'Invalid username or password.';
         }
     }
-    $error = "Invalid credentials.";
 }
+
+include __DIR__ . '/../includes/header.php';
 ?>
-<!DOCTYPE html>
-<html>
-<head><title>Admin Login</title>
-<link rel="stylesheet" href="/assets/style.css">
-</head>
-<body>
-<div class="login-container">
-<h2>Admin Login</h2>
-<?php if ($error): ?>
-<p class="error"><?= htmlspecialchars($error) ?></p>
-<?php endif; ?>
-<form method="post">
-    <label>Username: <input name="username" required></label><br>
-    <label>Password: <input type="password" name="password" required></label><br>
-    <button type="submit">Login</button>
-</form>
+<div class="login-card">
+    <h2>Login</h2>
+    <?php if ($error): ?>
+        <div class="error-message" style="color: #c00; margin-bottom: 1rem;">
+            <?= htmlspecialchars($error) ?>
+        </div>
+    <?php endif; ?>
+    <form method="post" action="login.php" autocomplete="off">
+        <input name="username" id="username" type="text" placeholder="Username" required autofocus autocomplete="username">
+        <input name="password" id="password" type="password" placeholder="Password" required autocomplete="current-password">
+        <button type="submit">Login</button>
+    </form>
 </div>
-</body>
-</html>
+<?php
+include __DIR__ . '/../includes/footer.php';
+?>
