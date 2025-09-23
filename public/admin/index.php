@@ -28,13 +28,12 @@ if (empty($_SESSION['user_id']) || empty($_SESSION['is_admin'])) {
     <link rel="stylesheet" href="/assets/style.css">
 </head>
 <body>
-    <nav class="navbar">
+    <nav class="navbar admin-navbar">
         <div class="nav-container">
-            <div class="banner-wrapper">
-                <img src="/assets/banner.jpg" alt="Banner" class="banner-img">
-                <span class="site-title-over-banner"><?= defined('SITE_NAME') ? SITE_NAME : "Site" ?></span>
+            <div class="admin-title">
+                <span><?= defined('SITE_NAME') ? SITE_NAME : "Site" ?> - Admin</span>
             </div>
-            <ul class="nav-links">
+            <ul class="nav-links admin-nav-links">
                 <li><a href="/">Home</a></li>
                 <li><a href="/admin/">Dashboard</a></li>
                 <li><a href="/logout.php">Logout</a></li>
