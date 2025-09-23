@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once '../inc/dbconfig.php';
+require_once __DIR__ . '/../inc/dbconfig.php';
 
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -19,13 +19,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     $error = "Invalid credentials.";
 }
+
+// Set variables for includes
+$page_title = "Admin Login";
+
+// Include header
+include __DIR__ . '/../includes/header.php';
 ?>
-<!DOCTYPE html>
-<html>
-<head><title>Admin Login</title>
-<link rel="stylesheet" href="/assets/style.css">
-</head>
-<body>
 <div class="login-container">
 <h2>Admin Login</h2>
 <?php if ($error): ?>
@@ -37,5 +37,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <button type="submit">Login</button>
 </form>
 </div>
-</body>
-</html>
+<?php
+// Include footer
+include __DIR__ . '/../includes/footer.php';

@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once '../../inc/dbconfig.php';
+require_once __DIR__ . '/../../inc/dbconfig.php';
 
 $mysqli = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 if ($mysqli->connect_errno) {
@@ -20,29 +20,21 @@ if (empty($_SESSION['user_id']) || empty($_SESSION['is_admin'])) {
     header('Location: /login.php');
     exit;
 }
+
+// Set variables for includes
+$page_title = "Admin Dashboard";
+$is_admin_page = true;
+
+// Include header
+include __DIR__ . '/../../includes/header.php';
+
+// Include navbar
+include __DIR__ . '/../../includes/navbar.php';
 ?>
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Admin Dashboard - <?= defined('SITE_NAME') ? SITE_NAME : "Site" ?></title>
-    <link rel="stylesheet" href="/assets/style.css">
-</head>
-<body>
-    <nav class="navbar admin-navbar">
-        <div class="nav-container">
-            <div class="admin-title">
-                <span><?= defined('SITE_NAME') ? SITE_NAME : "Site" ?> - Admin</span>
-            </div>
-            <ul class="nav-links admin-nav-links">
-                <li><a href="/">Home</a></li>
-                <li><a href="/admin/">Dashboard</a></li>
-                <li><a href="/logout.php">Logout</a></li>
-            </ul>
-        </div>
-    </nav>
     <main>
         <h1>Admin Dashboard</h1>
         <p>Welcome, admin! (Basic dashboard — add edit/create/delete features as you wish.)</p>
     </main>
-</body>
-</html>
+<?php
+// Include footer
+include __DIR__ . '/../../includes/footer.php';

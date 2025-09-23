@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html>
 <head>
     <title>Site Setup - Create Admin</title>
-    <link rel="stylesheet" href="/assets/style.css">
+    <link rel="stylesheet" href="/assets/css/styles.css">
     <style>
         body {
             background: linear-gradient(120deg, #e0e7ff 0%, #fff 100%);

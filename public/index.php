@@ -1,6 +1,7 @@
 <?php
 session_start();
-require_once '../inc/dbconfig.php';
+require_once __DIR__ . '/../inc/dbconfig.php';
+require_once __DIR__ . '/../includes/functions.php';
 
 $mysqli = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 if ($mysqli->connect_errno) {
@@ -18,59 +19,23 @@ if ($row['n'] == 0 && basename($_SERVER['PHP_SELF']) !== 'setup.php') {
 $page_slug = $_GET['page'] ?? 'home';
 
 // Fetch all pages for the dynamic menu
-$pages_result = $mysqli->query("SELECT slug, title FROM pages ORDER BY id ASC");
-$menu_pages = [];
-while ($row = $pages_result->fetch_assoc()) {
-    $menu_pages[] = $row;
-}
+$menu_pages = getMenuPages($mysqli);
 
 // Special handling for 'blog'
 if ($page_slug === 'blog') {
-    $posts_res = $mysqli->query("SELECT * FROM posts ORDER BY created_at DESC");
-    $posts = $posts_res->fetch_all(MYSQLI_ASSOC);
+    $posts = getAllPosts($mysqli);
     $page_title = "Blog";
 } else {
-    // Load from pages table, or home content if slug is 'home'
-    $stmt = $mysqli->prepare("SELECT * FROM pages WHERE slug = ?");
-    $stmt->bind_param('s', $page_slug);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $page = $result->fetch_assoc();
+    // Load from pages table, or home content if slug is 'home'  
+    $page = getPageBySlug($mysqli, $page_slug);
     $page_title = $page['title'] ?? ucfirst($page_slug);
 }
+// Include header
+include __DIR__ . '/../includes/header.php';
+
+// Include navbar
+include __DIR__ . '/../includes/navbar.php';
 ?>
-<!DOCTYPE html>
-<html>
-<head>
-    <title><?= htmlspecialchars($page_title) ?> - <?= defined('SITE_NAME') ? SITE_NAME : "Site" ?></title>
-    <link rel="stylesheet" href="/assets/style.css">
-</head>
-<body>
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="banner-wrapper">
-                <img src="/assets/banner.jpg" alt="Banner" class="banner-img">
-                <span class="site-title-over-banner"><?= defined('SITE_NAME') ? SITE_NAME : "Site" ?></span>
-            </div>
-            <ul class="nav-links">
-                <li><a href="/">Home</a></li>
-                <?php foreach ($menu_pages as $menu_page): ?>
-                    <li>
-                        <a href="/?page=<?= htmlspecialchars($menu_page['slug']) ?>">
-                            <?= htmlspecialchars($menu_page['title']) ?>
-                        </a>
-                    </li>
-                <?php endforeach; ?>
-                <li><a href="/?page=blog">Blog</a></li>
-                <?php if (!empty($_SESSION['is_admin'])): ?>
-                    <li><a href="/admin/">Admin</a></li>
-                    <li><a href="/logout.php">Logout</a></li>
-                <?php else: ?>
-                    <li><a href="/login.php">Login</a></li>
-                <?php endif; ?>
-            </ul>
-        </div>
-    </nav>
     <main>
         <?php if ($page_slug === 'blog'): ?>
             <h1>Blog</h1>
@@ -92,5 +57,6 @@ if ($page_slug === 'blog') {
             <p>Sorry, that page does not exist.</p>
         <?php endif; ?>
     </main>
-</body>
-</html>
+<?php
+// Include footer
+include __DIR__ . '/../includes/footer.php';
