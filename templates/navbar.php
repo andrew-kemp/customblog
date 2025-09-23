@@ -1,6 +1,7 @@
+<?php $site_title = get_site_title(); ?>
 <nav class="navbar">
   <div class="navbar-left">
-    <a href="index.php?page=home" class="site-title">My Custom Blog</a>
+    <a href="index.php?page=home" class="site-title"><?= htmlspecialchars($site_title) ?></a>
   </div>
   <div class="navbar-right">
     <a href="index.php?page=home">Home</a>

@@ -1,6 +1,6 @@
     </div> <!-- closes main-wrapper -->
     <footer>
-        &copy; <?= date('Y'); ?> My Custom Blog. Admin Panel.
+        &copy; <?= date('Y'); ?> <?= htmlspecialchars(get_site_title()) ?>. Admin Panel.
     </footer>
 </body>
 </html>

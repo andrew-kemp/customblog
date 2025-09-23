@@ -16,6 +16,7 @@ while [[ -z "$SSLEMAIL" ]]; do
 done
 
 INSTALL_DIR="/var/www/$DOMAIN"
+PUBLIC_DIR="$INSTALL_DIR/public"
 
 # Generate DB and user names based on the domain (replace . and - with _)
 DOMAIN_DB=$(echo "$DOMAIN" | tr '.' '_' | tr '-' '_')
@@ -63,21 +64,6 @@ echo "--- Cloning repo ---"
 sudo git clone https://github.com/andrew-kemp/customblog.git "$INSTALL_DIR"
 sudo chown -R www-data:www-data "$INSTALL_DIR"
 
-# --- Ensure assets directory exists ---
-if [ ! -d "$INSTALL_DIR/assets" ]; then
-  sudo mkdir -p "$INSTALL_DIR/assets"
-  sudo chown -R www-data:www-data "$INSTALL_DIR/assets"
-fi
-
-# --- Set Default Banner if None Exists ---
-if [ ! -f "$INSTALL_DIR/assets/banner.jpg" ]; then
-  if [ -f "$INSTALL_DIR/assets/banner-default.jpg" ]; then
-    cp "$INSTALL_DIR/assets/banner-default.jpg" "$INSTALL_DIR/assets/banner.jpg"
-  else
-    echo "Warning: Default banner image not found. Please add assets/banner.jpg manually."
-  fi
-fi
-
 # --- Create MySQL database and user ---
 echo "--- Creating DB and DB user ---"
 sudo mysql -e "CREATE DATABASE \`$DBNAME\`;"
@@ -94,21 +80,23 @@ define('DB_PASS', '$DBPASS');
 define('DB_HOST', 'localhost');
 EOF
 
-# --- Import DB schema ---
-echo "--- Importing database schema ---"
-mysql -u"$DBUSER" -p"$DBPASS" "$DBNAME" < "$INSTALL_DIR/schema.sql"
+cp "$INSTALL_DIR/dbconfig.php" "$INSTALL_DIR/inc/dbconfig.php"
 
-# --- Create Apache HTTP VirtualHost (no SSL yet) ---
+# --- Set Default Banner if None Exists ---
+if [ ! -f "$PUBLIC_DIR/assets/banner.jpg" ]; then
+  cp "$PUBLIC_DIR/assets/banner-default.jpg" "$PUBLIC_DIR/assets/banner.jpg"
+fi
+
+# --- Create minimal HTTP VirtualHost (no SSL yet) ---
 echo "--- Setting up Apache HTTP VirtualHost ---"
 VHOST_CONF="/etc/apache2/sites-available/$DOMAIN.conf"
 sudo bash -c "cat > $VHOST_CONF" <<EOF
 <VirtualHost *:80>
     ServerName $DOMAIN
-    DocumentRoot $INSTALL_DIR
+    DocumentRoot $PUBLIC_DIR
 
-    <Directory $INSTALL_DIR>
+    <Directory $PUBLIC_DIR>
         AllowOverride All
-        DirectoryIndex index.php
         Require all granted
     </Directory>
 
@@ -140,11 +128,10 @@ sudo bash -c "cat > $VHOST_CONF" <<EOF
 
 <VirtualHost *:443>
     ServerName $DOMAIN
-    DocumentRoot $INSTALL_DIR
+    DocumentRoot $PUBLIC_DIR
 
-    <Directory $INSTALL_DIR>
+    <Directory $PUBLIC_DIR>
         AllowOverride All
-        DirectoryIndex index.php
         Require all granted
     </Directory>
 
@@ -164,6 +151,13 @@ if ! crontab -l 2>/dev/null | grep -q 'certbot renew'; then
   (crontab -l 2>/dev/null; echo "0 3 * * * certbot renew --quiet") | crontab -
 fi
 
+# --- Import DB schema ---
+echo "--- Importing database schema ---"
+mysql -u"$DBUSER" -p"$DBPASS" "$DBNAME" < "$INSTALL_DIR/schema.sql"
+
+# --- Set/Update Site Title in settings table ---
+mysql -u"$DBUSER" -p"$DBPASS" "$DBNAME" -e "INSERT INTO settings (name, value) VALUES ('site_title', '$(echo $SITENAME | sed "s/'/''/g")') ON DUPLICATE KEY UPDATE value=VALUES(value);"
+
 # --- Permissions ---
 sudo chown -R www-data:www-data "$INSTALL_DIR"
 
@@ -175,6 +169,7 @@ echo "  -------------"
 echo "  Site URL:           https://$DOMAIN/"
 echo "  Site Name:          $SITENAME"
 echo "  Site Root:          $INSTALL_DIR"
+echo "  Web Root:           $PUBLIC_DIR"
 echo ""
 echo "  DATABASE SETTINGS"
 echo "  -----------------"

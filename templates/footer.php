@@ -1,6 +1,6 @@
     </div> <!-- closes main-wrapper -->
     <footer>
-        &copy; <?php echo date("Y"); ?> My Custom Blog. All rights reserved.
+        &copy; <?= date("Y"); ?> <?= htmlspecialchars(get_site_title()) ?>. All rights reserved.
     </footer>
 </body>
 </html>

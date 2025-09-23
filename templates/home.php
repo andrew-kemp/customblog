@@ -1,6 +1,7 @@
+<?php $site_title = get_site_title(); ?>
 <?php if (isset($home)): ?>
   <main class="content">
-    <h1><?= htmlspecialchars($home['title']) ?></h1>
+    <h1><?= htmlspecialchars($site_title) ?></h1>
     <div><?= $home['content'] ?></div>
     <hr>
     <h2>Latest Blog Posts</h2>
