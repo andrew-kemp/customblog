@@ -54,5 +54,5 @@ CREATE TABLE IF NOT EXISTS pages (
 
 -- Insert default pages
 INSERT INTO pages (title, slug, content) VALUES
-('About', 'about', 'This is the about page. Tell your visitors about yourself, your blog, or your mission.'),
+('About', 'about', 'This is the about page. Edit it for your story.'),
 ('Contact', 'contact', 'Contact form coming soon.');
