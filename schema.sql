@@ -1,58 +1,34 @@
-CREATE TABLE IF NOT EXISTS users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(50) UNIQUE,
-    email VARCHAR(255) UNIQUE,
-    password_hash VARCHAR(255),
-    mfa_secret VARCHAR(32) DEFAULT NULL,
-    is_admin BOOLEAN DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE pages (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  slug VARCHAR(100) NOT NULL UNIQUE,
+  title VARCHAR(255) NOT NULL,
+  content TEXT NOT NULL,
+  is_home BOOLEAN DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS posts (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    title VARCHAR(255),
-    slug VARCHAR(255) UNIQUE,
-    content TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    author_id INT,
-    FOREIGN KEY (author_id) REFERENCES users(id)
+CREATE TABLE posts (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  slug VARCHAR(100) NOT NULL UNIQUE,
+  title VARCHAR(255) NOT NULL,
+  content TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS categories (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) UNIQUE
+CREATE TABLE users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(50) NOT NULL UNIQUE,
+  email VARCHAR(100) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS tags (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) UNIQUE
-);
+-- Initial content
+INSERT INTO pages (slug, title, content, is_home) VALUES
+('home', 'Welcome to My Custom Blog', '<p>This is your home page. Edit it in the admin area.</p>', 1),
+('about', 'About', '<p>This technology blog covers Microsoft 365, Azure, Linux, and Copilot news, tips, and tutorials.</p>', 0),
+('contact', 'Contact', '<p>Contact us at <a href="mailto:info@andykemp.cloud">info@andykemp.cloud</a></p>', 0);
 
-CREATE TABLE IF NOT EXISTS post_categories (
-    post_id INT,
-    category_id INT,
-    PRIMARY KEY (post_id, category_id),
-    FOREIGN KEY (post_id) REFERENCES posts(id),
-    FOREIGN KEY (category_id) REFERENCES categories(id)
-);
-
-CREATE TABLE IF NOT EXISTS post_tags (
-    post_id INT,
-    tag_id INT,
-    PRIMARY KEY (post_id, tag_id),
-    FOREIGN KEY (post_id) REFERENCES posts(id),
-    FOREIGN KEY (tag_id) REFERENCES tags(id)
-);
-
-CREATE TABLE IF NOT EXISTS pages (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    title VARCHAR(255),
-    slug VARCHAR(255) UNIQUE,
-    content TEXT
-);
-
--- Insert default pages
-INSERT INTO pages (title, slug, content) VALUES
-('About', 'about', 'This is the about page. Tell your visitors about yourself, your blog, or your mission.'),
-('Contact', 'contact', 'Contact form coming soon.');
+INSERT INTO posts (slug, title, content) VALUES
+('hello-m365', 'Getting Started with Microsoft 365', 'This is your first post about Microsoft 365. Edit or delete it, then start blogging!'),
+('azure-automation', 'Automating with Azure', 'An introduction to Azure automation for IT pros, with tips for integrating with Microsoft 365 and Linux.');

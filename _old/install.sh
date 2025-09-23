@@ -64,21 +64,6 @@ echo "--- Cloning repo ---"
 sudo git clone https://github.com/andrew-kemp/customblog.git "$INSTALL_DIR"
 sudo chown -R www-data:www-data "$INSTALL_DIR"
 
-# --- Ensure public/assets directory exists ---
-if [ ! -d "$PUBLIC_DIR/assets" ]; then
-  sudo mkdir -p "$PUBLIC_DIR/assets"
-  sudo chown -R www-data:www-data "$PUBLIC_DIR/assets"
-fi
-
-# --- Set Default Banner if None Exists ---
-if [ ! -f "$PUBLIC_DIR/assets/banner.jpg" ]; then
-  if [ -f "$PUBLIC_DIR/assets/banner-default.jpg" ]; then
-    cp "$PUBLIC_DIR/assets/banner-default.jpg" "$PUBLIC_DIR/assets/banner.jpg"
-  else
-    echo "Warning: Default banner image not found. Please add assets/banner.jpg manually."
-  fi
-fi
-
 # --- Create MySQL database and user ---
 echo "--- Creating DB and DB user ---"
 sudo mysql -e "CREATE DATABASE \`$DBNAME\`;"
@@ -95,9 +80,12 @@ define('DB_PASS', '$DBPASS');
 define('DB_HOST', 'localhost');
 EOF
 
-# --- Import DB schema ---
-echo "--- Importing database schema ---"
-mysql -u"$DBUSER" -p"$DBPASS" "$DBNAME" < "$INSTALL_DIR/schema.sql"
+cp "$INSTALL_DIR/dbconfig.php" "$INSTALL_DIR/inc/dbconfig.php"
+
+# --- Set Default Banner if None Exists ---
+if [ ! -f "$PUBLIC_DIR/assets/banner.jpg" ]; then
+  cp "$PUBLIC_DIR/assets/banner-default.jpg" "$PUBLIC_DIR/assets/banner.jpg"
+fi
 
 # --- Create minimal HTTP VirtualHost (no SSL yet) ---
 echo "--- Setting up Apache HTTP VirtualHost ---"
@@ -162,6 +150,10 @@ sudo systemctl reload apache2
 if ! crontab -l 2>/dev/null | grep -q 'certbot renew'; then
   (crontab -l 2>/dev/null; echo "0 3 * * * certbot renew --quiet") | crontab -
 fi
+
+# --- Import DB schema ---
+echo "--- Importing database schema ---"
+mysql -u"$DBUSER" -p"$DBPASS" "$DBNAME" < "$INSTALL_DIR/schema.sql"
 
 # --- Permissions ---
 sudo chown -R www-data:www-data "$INSTALL_DIR"
