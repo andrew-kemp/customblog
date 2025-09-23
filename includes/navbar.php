@@ -13,11 +13,11 @@ $currentPage = isset($currentPage) ? $currentPage : '';
 ?>
 <nav class="navbar">
     <ul>
-        <?php foreach ($menuPages as $page): ?>
+        <?php foreach ($menuPages as $menuPage): ?>
             <li>
-                <a href="/?page=<?= urlencode($page['slug']) ?>"
-                   class="<?= $currentPage === $page['slug'] ? 'active' : '' ?>">
-                    <?= htmlspecialchars($page['title']) ?>
+                <a href="/?page=<?= urlencode($menuPage['slug']) ?>"
+                   class="<?= $currentPage === $menuPage['slug'] ? 'active' : '' ?>">
+                    <?= htmlspecialchars($menuPage['title']) ?>
                 </a>
             </li>
         <?php endforeach; ?>
