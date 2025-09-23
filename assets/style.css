@@ -1,8 +1,20 @@
-body {
-    font-family: 'Segoe UI', Arial, sans-serif;
+html, body {
+    height: 100%;
     margin: 0;
+    padding: 0;
+}
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Segoe UI', Arial, sans-serif;
     background: #f4f8fc;
     color: #232a2f;
+}
+.main-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 /* Navbar */
 .navbar {
@@ -31,7 +43,6 @@ body {
 .navbar-right a:hover {
     color: #42aaff;
 }
-/* Banner */
 .banner img {
     width: 100vw;
     max-height: 280px;
@@ -39,7 +50,6 @@ body {
     display: block;
     border-bottom: 3px solid #42aaff;
 }
-/* Main content */
 .content {
     max-width: 740px;
     margin: 2.2em auto 4em auto;
@@ -56,7 +66,6 @@ hr {
     border: 0;
     border-top: 1px solid #e2e9f2;
 }
-/* Blog list */
 .blog-list {
     list-style: none;
     padding: 0;
@@ -87,17 +96,15 @@ hr {
     margin-bottom: 2em;
     line-height: 1.7;
 }
-/* Footer */
 footer {
     background: #142a4c;
     color: #fff;
     text-align: center;
     padding: 1em 0;
-    margin-top: 2em;
     font-size: 0.97em;
     letter-spacing: 1px;
+    margin-top: auto;
 }
-/* Setup wizard */
 .setup-bg {
     background: linear-gradient(135deg, #e6f0fa 0%, #cbe7ff 100%);
     min-height: 100vh;
@@ -165,7 +172,6 @@ footer {
     margin-bottom: 1.2em;
     font-size: 1em;
 }
-/* Responsive */
 @media (max-width: 830px) {
     .content { padding: 1em; }
     .navbar { flex-direction: column; align-items: flex-start; }

@@ -1,10 +1,5 @@
-<?php if (isset($home) && file_exists('assets/banner.jpg')): ?>
-  <div class="banner">
-    <img src="assets/banner.jpg" alt="Banner" />
-  </div>
-<?php endif; ?>
-<main class="content">
-  <?php if (isset($home)): ?>
+<?php if (isset($home)): ?>
+  <main class="content">
     <h1><?= htmlspecialchars($home['title']) ?></h1>
     <div><?= $home['content'] ?></div>
     <hr>
@@ -15,11 +10,13 @@
           <a href="index.php?page=post&slug=<?= htmlspecialchars($post['slug']) ?>">
             <?= htmlspecialchars($post['title']) ?>
           </a>
-          <span class="blog-date"><?=date('Y-m-d', strtotime($post['created_at']))?></span>
+          <span class="blog-date"><?= date('Y-m-d', strtotime($post['created_at'])) ?></span>
         </li>
       <?php endforeach; ?>
     </ul>
-  <?php elseif (isset($posts)): ?>
+  </main>
+<?php elseif (isset($posts)): ?>
+  <main class="content">
     <h1>Blog</h1>
     <ul class="blog-list">
       <?php foreach ($posts as $post): ?>
@@ -27,9 +24,9 @@
           <a href="index.php?page=post&slug=<?= htmlspecialchars($post['slug']) ?>">
             <?= htmlspecialchars($post['title']) ?>
           </a>
-          <span class="blog-date"><?=date('Y-m-d', strtotime($post['created_at']))?></span>
+          <span class="blog-date"><?= date('Y-m-d', strtotime($post['created_at'])) ?></span>
         </li>
       <?php endforeach; ?>
     </ul>
-  <?php endif; ?>
-</main>
+  </main>
+<?php endif; ?>

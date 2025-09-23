@@ -1,6 +1,6 @@
     </div> <!-- closes main-wrapper -->
     <footer>
-        &copy; <?php echo date("Y"); ?> My Custom Blog. All rights reserved.
+        &copy; <?= date('Y'); ?> My Custom Blog. Admin Panel.
     </footer>
 </body>
 </html>
