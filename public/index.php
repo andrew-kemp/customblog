@@ -38,40 +38,10 @@ if ($page_slug === 'blog') {
     $page = $result->fetch_assoc();
     $page_title = $page['title'] ?? ucfirst($page_slug);
 }
+
+// Include header
+require_once '../includes/header.php';
 ?>
-<!DOCTYPE html>
-<html>
-<head>
-    <title><?= htmlspecialchars($page_title) ?> - <?= defined('SITE_NAME') ? SITE_NAME : "Site" ?></title>
-    <link rel="stylesheet" href="/assets/style.css">
-</head>
-<body>
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="banner-wrapper">
-                <img src="/assets/banner.jpg" alt="Banner" class="banner-img">
-                <span class="site-title-over-banner"><?= defined('SITE_NAME') ? SITE_NAME : "Site" ?></span>
-            </div>
-            <ul class="nav-links">
-                <li><a href="/">Home</a></li>
-                <?php foreach ($menu_pages as $menu_page): ?>
-                    <li>
-                        <a href="/?page=<?= htmlspecialchars($menu_page['slug']) ?>">
-                            <?= htmlspecialchars($menu_page['title']) ?>
-                        </a>
-                    </li>
-                <?php endforeach; ?>
-                <li><a href="/?page=blog">Blog</a></li>
-                <?php if (!empty($_SESSION['is_admin'])): ?>
-                    <li><a href="/admin/">Admin</a></li>
-                    <li><a href="/logout.php">Logout</a></li>
-                <?php else: ?>
-                    <li><a href="/login.php">Login</a></li>
-                <?php endif; ?>
-            </ul>
-        </div>
-    </nav>
-    <main>
         <?php if ($page_slug === 'blog'): ?>
             <h1>Blog</h1>
             <?php if (!empty($posts)): ?>
@@ -91,6 +61,4 @@ if ($page_slug === 'blog') {
             <h1>Page Not Found</h1>
             <p>Sorry, that page does not exist.</p>
         <?php endif; ?>
-    </main>
-</body>
-</html>
+<?php require_once '../includes/footer.php'; ?>
