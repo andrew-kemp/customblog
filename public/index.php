@@ -52,7 +52,11 @@ if ($page_slug === 'blog') {
                 <img src="/assets/banner.jpg" alt="Banner" class="banner-img">
                 <span class="site-title-over-banner"><?= defined('SITE_NAME') ? SITE_NAME : "Site" ?></span>
             </div>
-            <ul class="nav-links">
+        </div>
+    </nav>
+    <nav class="public-navbar">
+        <div class="public-nav-container">
+            <ul class="public-nav-links">
                 <li><a href="/">Home</a></li>
                 <?php foreach ($menu_pages as $menu_page): ?>
                     <li>
@@ -61,13 +65,13 @@ if ($page_slug === 'blog') {
                         </a>
                     </li>
                 <?php endforeach; ?>
-                <li><a href="/?page=blog">Blog</a></li>
                 <?php if (!empty($_SESSION['is_admin'])): ?>
                     <li><a href="/admin/">Admin</a></li>
                     <li><a href="/logout.php">Logout</a></li>
                 <?php else: ?>
                     <li><a href="/login.php">Login</a></li>
                 <?php endif; ?>
+                <li><a href="/?page=blog">Blog</a></li>
             </ul>
         </div>
     </nav>

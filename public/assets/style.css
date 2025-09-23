@@ -7,7 +7,7 @@ body {
 .navbar {
     position: relative;
     width: 100%;
-    margin-bottom: 40px;
+    margin-bottom: 0;
     background: #222;
 }
 
@@ -35,13 +35,14 @@ body {
     letter-spacing: 2px;
 }
 
+/* Legacy nav-links (no longer used for public pages but kept for compatibility) */
 .nav-links {
     position: absolute;
     top: 20px;
-    left: 20px; /* Changed from right: 40px to left: 20px for left alignment */
+    left: 20px;
     display: flex;
     gap: 18px;
-    list-style: none; /* Remove bullet points */
+    list-style: none;
     z-index: 11;
     margin: 0;
     padding: 0;
@@ -109,4 +110,54 @@ main {
     list-style: none;
     margin: 0;
     padding: 0;
+}
+
+/* Public navigation styling - horizontal menu bar */
+.public-navbar {
+    background: #222;
+    padding: 12px 0;
+    margin-bottom: 40px;
+}
+
+.public-nav-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.public-nav-links {
+    display: flex;
+    gap: 0;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    justify-content: center;
+}
+
+.public-nav-links li {
+    margin: 0;
+}
+
+.public-nav-links a {
+    color: #fff;
+    text-decoration: none;
+    font-weight: 500;
+    background: #444;
+    padding: 10px 16px;
+    display: block;
+    transition: background 0.2s;
+    border-radius: 0;
+}
+
+.public-nav-links a:hover,
+.public-nav-links .active {
+    background: #666;
+}
+
+.public-nav-links li:first-child a {
+    border-radius: 6px 0 0 6px;
+}
+
+.public-nav-links li:last-child a {
+    border-radius: 0 6px 6px 0;
 }
