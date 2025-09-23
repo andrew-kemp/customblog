@@ -33,16 +33,16 @@ CREATE TABLE IF NOT EXISTS post_categories (
     post_id INT,
     category_id INT,
     PRIMARY KEY (post_id, category_id),
-    FOREIGN KEY (post_id) REFERENCES posts(id),
-    FOREIGN KEY (category_id) REFERENCES categories(id)
+    FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS post_tags (
     post_id INT,
     tag_id INT,
     PRIMARY KEY (post_id, tag_id),
-    FOREIGN KEY (post_id) REFERENCES posts(id),
-    FOREIGN KEY (tag_id) REFERENCES tags(id)
+    FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+    FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS pages (
@@ -57,10 +57,10 @@ CREATE TABLE IF NOT EXISTS settings (
     value TEXT
 );
 
--- Insert default pages
-INSERT INTO pages (title, slug, content) VALUES
-('About', 'about', 'This is the about page. Tell your visitors about yourself, your blog, or your mission.'),
-('Contact', 'contact', 'Contact form coming soon.');
+-- Insert default pages if not already present
+INSERT IGNORE INTO pages (id, title, slug, content) VALUES
+(1, 'About', 'about', 'This is the about page. Tell your visitors about yourself, your blog, or your mission.'),
+(2, 'Contact', 'contact', 'Contact form coming soon.');
 
 -- Insert default site title (will be overwritten by install.sh or setup wizard)
 INSERT INTO settings (name, value) VALUES ('site_title', 'Andy Kemp')
